@@ -9,24 +9,9 @@ spring:
     gateway:
       server:
         webflux:
-          # Global CORS configuration
-          globalcors:
-            cors-configurations:
-              '[/**]':
-                allowedOrigins:
-                  - "http://localhost:3000"
-                  - "http://localhost:5173"
-                allowedMethods:
-                  - GET
-                  - POST
-                  - PUT
-                  - DELETE
-                  - PATCH
-                  - OPTIONS
-                allowedHeaders: "*"
-                allowCredentials: true
-                maxAge: 3600
-
+          # Strip duplicate CORS headers added by downstream services
+          default-filters:
+            - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials Access-Control-Allow-Methods Access-Control-Allow-Headers, RETAIN_UNIQUE
           # Route definitions
           routes:
             # ─── Auth Service (NO JWT required) ───
@@ -41,7 +26,7 @@ spring:
               predicates:
                 - Path=/api/v1/questions/**
                 - Method=GET
-              
+
             - id: problem-service-questions-protected
               uri: http://localhost:8084
               predicates:
