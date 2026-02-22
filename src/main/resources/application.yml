@@ -76,6 +76,14 @@ spring:
               filters:
                 - name: JwtAuthentication
 
+            # ─── Problem Service (User Profile) ───
+            - id: problem-service-user-profile
+              uri: http://localhost:8084
+              predicates:
+                - Path=/api/v1/user/**
+              filters:
+                - name: JwtAuthentication
+
             # ─── Submission Service (JWT required) ───
             - id: submission-service
               uri: http://localhost:8080
