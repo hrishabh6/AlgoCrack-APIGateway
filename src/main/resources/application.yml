@@ -1,5 +1,5 @@
 server:
-  port: 9090
+  port: ${SERVER_PORT:9090}
 
 spring:
   application:
@@ -16,19 +16,19 @@ spring:
           routes:
             # ─── Auth Service (NO JWT required) ───
             - id: auth-service
-              uri: http://localhost:7483
+              uri: ${AUTH_SERVICE_BASE_URL:http://auth-service:7483}
               predicates:
                 - Path=/api/v1/auth/**
 
             # ─── Problem Service (Questions) ───
             - id: problem-service-questions-public
-              uri: http://localhost:8084
+              uri: ${PROBLEM_SERVICE_URL:http://problem-service:8084}
               predicates:
                 - Path=/api/v1/questions/**
                 - Method=GET
 
             - id: problem-service-questions-protected
-              uri: http://localhost:8084
+              uri: ${PROBLEM_SERVICE_URL:http://problem-service:8084}
               predicates:
                 - Path=/api/v1/questions/**
               filters:
@@ -36,13 +36,13 @@ spring:
 
             # ─── Problem Service (Tags) ───
             - id: problem-service-tags-public
-              uri: http://localhost:8084
+              uri: ${PROBLEM_SERVICE_URL:http://problem-service:8084}
               predicates:
                 - Path=/api/v1/tags/**
                 - Method=GET
 
             - id: problem-service-tags-protected
-              uri: http://localhost:8084
+              uri: ${PROBLEM_SERVICE_URL:http://problem-service:8084}
               predicates:
                 - Path=/api/v1/tags/**
               filters:
@@ -50,13 +50,13 @@ spring:
 
             # ─── Problem Service (TestCases) ───
             - id: problem-service-testcases-public
-              uri: http://localhost:8084
+              uri: ${PROBLEM_SERVICE_URL:http://problem-service:8084}
               predicates:
                 - Path=/api/v1/testcases/**
                 - Method=GET
 
             - id: problem-service-testcases-protected
-              uri: http://localhost:8084
+              uri: ${PROBLEM_SERVICE_URL:http://problem-service:8084}
               predicates:
                 - Path=/api/v1/testcases/**
               filters:
@@ -64,13 +64,13 @@ spring:
 
             # ─── Problem Service (Solutions) ───
             - id: problem-service-solutions-public
-              uri: http://localhost:8084
+              uri: ${PROBLEM_SERVICE_URL:http://problem-service:8084}
               predicates:
                 - Path=/api/v1/solutions/**
                 - Method=GET
 
             - id: problem-service-solutions-protected
-              uri: http://localhost:8084
+              uri: ${PROBLEM_SERVICE_URL:http://problem-service:8084}
               predicates:
                 - Path=/api/v1/solutions/**
               filters:
@@ -78,7 +78,7 @@ spring:
 
             # ─── Problem Service (User Profile) ───
             - id: problem-service-user-profile
-              uri: http://localhost:8084
+              uri: ${PROBLEM_SERVICE_URL:http://problem-service:8084}
               predicates:
                 - Path=/api/v1/user/**
               filters:
@@ -86,7 +86,7 @@ spring:
 
             # ─── Submission Service (JWT required) ───
             - id: submission-service
-              uri: http://localhost:8080
+              uri: ${SUBMISSION_SERVICE_URL:http://submission-service:8080}
               predicates:
                 - Path=/api/v1/submissions/**
               filters:
@@ -94,7 +94,7 @@ spring:
 
 # JWT Configuration (RS256 — public key only)
 jwt:
-  public-key-path: classpath:keys/public.pem
+  public-key-path: ${JWT_PUBLIC_KEY_PATH:classpath:keys/public.pem}
 
 # Actuator
 management:
