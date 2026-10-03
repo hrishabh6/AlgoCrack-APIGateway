@@ -76,6 +76,14 @@ spring:
               filters:
                 - name: JwtAuthentication
 
+            # ─── Problem Service (User problem lists — always JWT, user-owned data) ───
+            - id: problem-service-problem-lists
+              uri: ${PROBLEM_SERVICE_URL:http://problem-service:8084}
+              predicates:
+                - Path=/api/v1/problem-lists/**
+              filters:
+                - name: JwtAuthentication
+
             # ─── Problem Service (User Profile) ───
             - id: problem-service-user-profile
               uri: ${PROBLEM_SERVICE_URL:http://problem-service:8084}

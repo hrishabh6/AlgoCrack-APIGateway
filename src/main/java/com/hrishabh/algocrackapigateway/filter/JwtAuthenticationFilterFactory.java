@@ -41,6 +41,8 @@ public class JwtAuthenticationFilterFactory
     private static final Logger log = LoggerFactory.getLogger(JwtAuthenticationFilterFactory.class);
     private static final String BEARER_PREFIX = "Bearer ";
     private static final String COOKIE_NAME = "jwtToken";
+    static final java.util.List<String> TRUSTED_IDENTITY_HEADERS =
+            java.util.List.of("X-User-Id", "X-User-Email", "X-User-Role", "X-Internal-Call");
 
     private final JwtUtil jwtUtil;
 
@@ -77,6 +79,10 @@ public class JwtAuthenticationFilterFactory
             try {
                 Claims claims = jwtUtil.validateToken(token);
                 ServerHttpRequest.Builder mutatedRequest = request.mutate();
+
+                // Identity headers are only ever set from the validated token; drop any client-supplied
+                // values so a claim missing from the token cannot be filled in by the caller.
+                mutatedRequest.headers(headers -> TRUSTED_IDENTITY_HEADERS.forEach(headers::remove));
 
                 // Always add email (subject)
                 String email = claims.getSubject();
