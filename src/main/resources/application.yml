@@ -131,6 +131,14 @@ spring:
               filters:
                 - name: JwtAuthentication
 
+            # ─── Submission Service — playground workspaces ───
+            - id: submission-service-playground
+              uri: ${SUBMISSION_SERVICE_URL:http://submission-service:8080}
+              predicates:
+                - Path=/api/v1/playgrounds/**
+              filters:
+                - name: JwtAuthentication
+
 # JWT Configuration (RS256 — public key only)
 jwt:
   public-key-path: ${JWT_PUBLIC_KEY_PATH:classpath:keys/public.pem}
