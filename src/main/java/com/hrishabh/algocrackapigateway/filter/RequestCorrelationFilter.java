@@ -44,7 +44,9 @@ public class RequestCorrelationFilter implements GlobalFilter {
         
         // Get or generate request ID (final so it can be used in lambdas)
         String requestIdTemp = exchange.getRequest().getHeaders().getFirst(REQUEST_ID_HEADER);
-        final String requestId = requestIdTemp != null ? requestIdTemp : StructuredLogger.generateRequestId();
+        final String requestId = requestIdTemp != null && !requestIdTemp.isBlank()
+            ? requestIdTemp
+            : StructuredLogger.generateRequestId();
         
         // Store requestId and start time in exchange attributes for later access
         exchange.getAttributes().put(REQUEST_ID_ATTRIBUTE, requestId);
@@ -52,8 +54,9 @@ public class RequestCorrelationFilter implements GlobalFilter {
         
         // Add request ID to outgoing request headers (for downstream services)
         ServerHttpRequest modifiedRequest = exchange.getRequest().mutate()
-            .header(REQUEST_ID_HEADER, requestId)
+            .headers(headers -> headers.set(REQUEST_ID_HEADER, requestId))
             .build();
+        exchange.getResponse().getHeaders().set(REQUEST_ID_HEADER, requestId);
         
         // Log incoming request
         logIncomingRequest(exchange.getRequest(), requestId);
@@ -65,8 +68,6 @@ public class RequestCorrelationFilter implements GlobalFilter {
                 long duration = System.currentTimeMillis() - startTime;
                 logOutgoingResponse(exchange.getResponse(), requestId, duration);
                 
-                // Add request ID to response headers for client correlation
-                exchange.getResponse().getHeaders().add(REQUEST_ID_HEADER, requestId);
             })
             .onErrorMap(throwable -> {
                 // Log error and propagate the exception

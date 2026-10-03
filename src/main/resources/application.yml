@@ -101,7 +101,11 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics
+        include: health,prometheus
+  prometheus:
+    metrics:
+      export:
+        enabled: true
   endpoint:
     health:
       show-details: when_authorized
@@ -109,5 +113,5 @@ management:
 # Logging
 logging:
   level:
-    com.hrishabh.algocrackapigateway: DEBUG
+    com.hrishabh.algocrackapigateway: INFO
     org.springframework.cloud.gateway: INFO

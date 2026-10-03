@@ -2,91 +2,23 @@
 <configuration>
     <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
 
-    <!-- Define output patterns -->
-    <!-- Simple pattern for console output during development -->
-    <property name="CONSOLE_LOG_PATTERN" value="%d{yyyy-MM-dd'T'HH:mm:ss.SSSZ} [%thread] %-5level %logger{36} - %msg%n"/>
+    <springProperty scope="context" name="APP_NAME" source="spring.application.name" defaultValue="AlgoCrack-APIGateway"/>
+    <springProperty scope="context" name="APP_ENV" source="spring.profiles.active" defaultValue="local"/>
 
-    <!-- Spring Boot default property for development/production switch -->
-    <springProperty scope="context" name="APP_NAME" source="spring.application.name"/>
-    <springProperty scope="context" name="APP_ENV" source="spring.profiles.active" defaultValue="default"/>
-
-    <!-- Console appender for structured logs -->
-    <appender name="CONSOLE_JSON" class="ch.qos.logback.core.ConsoleAppender">
-        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
-            <fieldNames>
-                <!-- Map standard logback fields to Logstash -->
-                <timestamp>timestamp</timestamp>
-                <version>version</version>
-                <logger>logger_name</logger>
-                <thread>thread_name</thread>
-                <level>level</level>
-                <message>message</message>
-            </fieldNames>
-            <customFields>{"service":"${APP_NAME}","environment":"${APP_ENV}"}</customFields>
-        </encoder>
-    </appender>
-
-    <!-- Console appender for simple text output (development) -->
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
-        <encoder>
-            <pattern>${CONSOLE_LOG_PATTERN}</pattern>
-            <charset>UTF-8</charset>
-        </encoder>
-    </appender>
-
-    <!-- File appender for structured logs (JSON format) -->
-    <appender name="FILE_JSON" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>logs/${APP_NAME}.json.log</file>
         <encoder class="net.logstash.logback.encoder.LogstashEncoder">
-            <fieldNames>
-                <timestamp>timestamp</timestamp>
-                <version>version</version>
-                <logger>logger_name</logger>
-                <thread>thread_name</thread>
-                <level>level</level>
-                <message>message</message>
-            </fieldNames>
-            <customFields>{"service":"${APP_NAME}","environment":"${APP_ENV}"}</customFields>
+            <customFields>{"service":"${APP_NAME}","environment":"${APP_ENV}","kube_micro":"APIGateway"}</customFields>
+            <includeMdcKeyName>request_id</includeMdcKeyName>
         </encoder>
-        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>logs/${APP_NAME}.json.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
-            <maxFileSize>100MB</maxFileSize>
-            <maxHistory>30</maxHistory>
-            <totalSizeCap>10GB</totalSizeCap>
-        </rollingPolicy>
     </appender>
 
-    <!-- Async appender to prevent logging from blocking -->
-    <appender name="ASYNC_FILE_JSON" class="ch.qos.logback.classic.AsyncAppender">
-        <queueSize>512</queueSize>
-        <discardingThreshold>0</discardingThreshold>
-        <appender-ref ref="FILE_JSON"/>
-    </appender>
-
-    <!-- Logger levels -->
-    <logger name="com.hrishabh.algocrackapigateway" level="DEBUG"/>
+    <logger name="com.hrishabh.algocrackapigateway" level="${LOG_LEVEL_API_GATEWAY:INFO}"/>
     <logger name="org.springframework.cloud.gateway" level="INFO"/>
     <logger name="org.springframework.security" level="INFO"/>
     <logger name="org.springframework.web" level="INFO"/>
     <logger name="org.springframework.boot" level="INFO"/>
 
-    <!-- Root logger -->
     <root level="INFO">
         <appender-ref ref="CONSOLE"/>
-        <appender-ref ref="ASYNC_FILE_JSON"/>
     </root>
-
-    <!-- Spring profile: local/dev logs to console only -->
-    <springProfile name="local,dev">
-        <root level="INFO">
-            <appender-ref ref="CONSOLE"/>
-        </root>
-    </springProfile>
-
-    <!-- Spring profile: production uses async JSON file appender -->
-    <springProfile name="prod">
-        <root level="INFO">
-            <appender-ref ref="ASYNC_FILE_JSON"/>
-        </root>
-    </springProfile>
 </configuration>

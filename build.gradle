@@ -42,6 +42,7 @@ dependencies {
 
     // Actuator for health checks
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'io.micrometer:micrometer-registry-prometheus'
 
     // Structured logging with Logstash encoder
     implementation 'net.logstash.logback:logstash-logback-encoder:7.4'

@@ -1,6 +1,7 @@
 package com.hrishabh.algocrackapigateway.logging;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import net.logstash.logback.argument.StructuredArguments;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,6 +23,7 @@ import java.util.UUID;
 public class StructuredLogger {
 
     private static final ObjectMapper objectMapper = new ObjectMapper();
+    private static final int MAX_STRING_LENGTH = 500;
     private final Logger slf4jLogger;
     private final String serviceName;
     private final String component;
@@ -67,10 +69,9 @@ public class StructuredLogger {
         Map<String, Object> logEntry = buildLogEntry("ERROR", message, fields);
         if (throwable != null) {
             logEntry.put(LoggingConstants.EXCEPTION_CLASS, throwable.getClass().getName());
-            logEntry.put(LoggingConstants.ERROR_MESSAGE, throwable.getMessage());
-            logEntry.put(LoggingConstants.STACK_TRACE, getStackTrace(throwable));
+            logEntry.put(LoggingConstants.ERROR_MESSAGE, sanitizeValue(LoggingConstants.ERROR_MESSAGE, throwable.getMessage()));
         }
-        slf4jLogger.error(serializeToJson(logEntry));
+        slf4jLogger.error(message, StructuredArguments.entries(logEntry), throwable);
     }
 
     /**
@@ -93,7 +94,7 @@ public class StructuredLogger {
         logEntry.put(LoggingConstants.HTTP_PATH, path);
         logEntry.put(LoggingConstants.USER_AGENT, userAgent);
         logEntry.put(LoggingConstants.REMOTE_IP, remoteIp);
-        slf4jLogger.info(serializeToJson(logEntry));
+        slf4jLogger.info("Incoming HTTP request", StructuredArguments.entries(logEntry));
     }
 
     /**
@@ -106,7 +107,7 @@ public class StructuredLogger {
         logEntry.put(LoggingConstants.HTTP_STATUS, statusCode);
         logEntry.put(LoggingConstants.TYPE, LoggingConstants.getHttpStatusType(statusCode));
         logEntry.put(LoggingConstants.DURATION_MS, durationMs);
-        slf4jLogger.info(serializeToJson(logEntry));
+        slf4jLogger.info("HTTP response", StructuredArguments.entries(logEntry));
     }
 
     /**
@@ -121,21 +122,20 @@ public class StructuredLogger {
      */
     private void logAtLevel(String level, String message, Object... fields) {
         Map<String, Object> logEntry = buildLogEntry(level, message, fields);
-        String jsonLog = serializeToJson(logEntry);
         
         switch (level) {
             case "ERROR":
-                slf4jLogger.error(jsonLog);
+                slf4jLogger.error(message, StructuredArguments.entries(logEntry));
                 break;
             case "WARN":
-                slf4jLogger.warn(jsonLog);
+                slf4jLogger.warn(message, StructuredArguments.entries(logEntry));
                 break;
             case "DEBUG":
-                slf4jLogger.debug(jsonLog);
+                slf4jLogger.debug(message, StructuredArguments.entries(logEntry));
                 break;
             case "INFO":
             default:
-                slf4jLogger.info(jsonLog);
+                slf4jLogger.info(message, StructuredArguments.entries(logEntry));
                 break;
         }
     }
@@ -146,13 +146,9 @@ public class StructuredLogger {
     private Map<String, Object> buildLogEntry(String level, String message, Object... fields) {
         Map<String, Object> logEntry = new LinkedHashMap<>();
         
-        // Add standard fields
-        logEntry.put(LoggingConstants.TIMESTAMP, System.currentTimeMillis());
-        logEntry.put(LoggingConstants.LEVEL, level);
-        logEntry.put(LoggingConstants.MESSAGE, message);
-        logEntry.put(LoggingConstants.SERVICE, serviceName);
-        logEntry.put(LoggingConstants.KUBE_MICRO, serviceName);
         logEntry.put(LoggingConstants.COMPONENT, component);
+        logEntry.putIfAbsent(LoggingConstants.TYPE, level);
+        logEntry.putIfAbsent(LoggingConstants.EVENT_TYPE, LoggingConstants.EventType.LIFECYCLE);
         
         // Add custom fields (key-value pairs)
         if (fields != null && fields.length > 0) {
@@ -161,7 +157,7 @@ public class StructuredLogger {
             }
             for (int i = 0; i < fields.length; i += 2) {
                 String key = String.valueOf(fields[i]);
-                Object value = fields[i + 1];
+                Object value = sanitizeValue(key, fields[i + 1]);
                 logEntry.put(key, value);
             }
         }
@@ -181,15 +177,33 @@ public class StructuredLogger {
         }
     }
 
-    /**
-     * Extracts stack trace from throwable.
-     */
-    private String getStackTrace(Throwable throwable) {
-        StringBuilder sb = new StringBuilder();
-        StackTraceElement[] elements = throwable.getStackTrace();
-        for (StackTraceElement element : elements) {
-            sb.append(element.toString()).append("\n");
+    private Object sanitizeValue(String key, Object value) {
+        if (value == null) {
+            return null;
         }
-        return sb.toString();
+        String normalizedKey = key == null ? "" : key.toLowerCase();
+        if (isSensitiveKey(normalizedKey)) {
+            return "[REDACTED]";
+        }
+        if (value instanceof String stringValue && stringValue.length() > MAX_STRING_LENGTH) {
+            return stringValue.substring(0, MAX_STRING_LENGTH) + "...[truncated]";
+        }
+        return value;
+    }
+
+    private boolean isSensitiveKey(String key) {
+        return key.contains("authorization")
+                || key.contains("password")
+                || key.equals("token")
+                || key.endsWith("_token")
+                || key.contains("jwt")
+                || key.contains("cookie")
+                || key.equals("code")
+                || key.equals("body")
+                || key.equals("payload")
+                || key.equals("testcase")
+                || key.equals("testcases")
+                || key.equals("input")
+                || key.equals("output");
     }
 }
