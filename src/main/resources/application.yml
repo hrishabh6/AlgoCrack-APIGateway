@@ -115,6 +115,22 @@ spring:
               filters:
                 - name: JwtAuthentication
 
+            # ─── Submission Service — progress, badges, leaderboard ───
+            - id: submission-service-progress
+              uri: ${SUBMISSION_SERVICE_URL:http://submission-service:8080}
+              predicates:
+                - Path=/api/v1/progress/**,/api/v1/badges,/api/v1/leaderboard
+              filters:
+                - name: JwtAuthentication
+
+            # ─── Submission Service — admin progress ───
+            - id: submission-service-progress-admin
+              uri: ${SUBMISSION_SERVICE_URL:http://submission-service:8080}
+              predicates:
+                - Path=/api/v1/admin/progress/**
+              filters:
+                - name: JwtAuthentication
+
 # JWT Configuration (RS256 — public key only)
 jwt:
   public-key-path: ${JWT_PUBLIC_KEY_PATH:classpath:keys/public.pem}
