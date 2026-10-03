@@ -92,6 +92,21 @@ spring:
               filters:
                 - name: JwtAuthentication
 
+            # ─── Problem Service (Daily Challenge — public read) ───
+            - id: problem-service-daily-challenges-public
+              uri: ${PROBLEM_SERVICE_URL:http://problem-service:8084}
+              predicates:
+                - Path=/api/v1/daily-challenges/**
+                - Method=GET
+
+            # ─── Problem Service (Daily Challenge — admin) ───
+            - id: problem-service-daily-challenges-admin
+              uri: ${PROBLEM_SERVICE_URL:http://problem-service:8084}
+              predicates:
+                - Path=/api/v1/admin/daily-challenges/**,/api/v1/admin/potd-problems/**
+              filters:
+                - name: JwtAuthentication
+
             # ─── Submission Service (JWT required) ───
             - id: submission-service
               uri: ${SUBMISSION_SERVICE_URL:http://submission-service:8080}
